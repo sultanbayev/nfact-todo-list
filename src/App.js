@@ -30,58 +30,54 @@ const AddButton = styled.button`
 
 function App() {
 
-  const retrieveTasks = () => {
-    if (localStorage.getItem('tasks')) {
-      const value = localStorage.getItem('tasks');
-      return JSON.parse(value);
-    }
-    return []
-  }
+  const db = firebase.firestore();
+  const collection = db.collection("tasks");
 
-  const [taskTitle, setTaskTitle] = React.useState('');
-  const [tasks, setTasks] = React.useState( retrieveTasks() );
+  const onCollectionUpdate = (querySnapshot) => {
+    const data = [];
+    querySnapshot.forEach((doc) => {
+      const { title, isChecked } = doc.data();
+      data.push({
+        id: doc.id,
+        doc, // DocumentSnapshot
+        title,
+        isChecked,
+      });
+    });
+    setTasks(data);
+  };
 
-  localStorage.setItem('tasks', JSON.stringify(tasks))
+  collection.onSnapshot(onCollectionUpdate)
+
+  const [newTaskTitle, setNewTaskTitle] = React.useState('');
+  const [tasks, setTasks] = React.useState([]);
 
   const addTask = () => {
-    if (taskTitle.trim().length) {
-      const updated = tasks.concat([{
-        title: taskTitle,
-        isChecked: false,
-        isEditable: false
-      }]);
-      setTasks(updated);
-      setTaskTitle('');
+    if (newTaskTitle.trim().length) {
+      collection.add({
+        title: newTaskTitle,
+        isChecked: false
+      });
+      setNewTaskTitle('');
     }
   };
 
   const onTextChange = (event) => {
-    setTaskTitle(event.target.value);
+    setNewTaskTitle(event.target.value);
   };
 
-  const onDelete = (index) => {
-    const tasksArray = [...tasks];
-    tasksArray.splice(index, 1);
-    setTasks(tasksArray);
+  const onDelete = (id) => {
+    collection.doc(id).delete()
   };
 
-  const onCheck = (index, isChecked) => {
-    const tasksArray = [...tasks];
-    tasksArray[index].isChecked = isChecked;
-    setTasks(tasksArray);
+  const onCheck = (id, isChecked) => {
+    const docRef = collection.doc(id);
+    docRef.update({ isChecked: isChecked })
   };
 
-  const onTitleDoubleClick = (index, isEditable) => {
-    const tasksArray = [...tasks];
-    tasksArray.forEach(task => task.isEditable = false);
-    tasksArray[index].isEditable = isEditable;
-    setTasks(tasksArray);
-  }
-
-  const updateTitle = (index, newTitle) => {
-    const tasksArray = [...tasks];
-    tasksArray[index].title = newTitle;
-    setTasks(tasksArray);
+  const updateTitle = (id, newTitle) => {
+    const docRef = collection.doc(id);
+    docRef.update({ title: newTitle })
   }
 
   return (
@@ -89,7 +85,7 @@ function App() {
       <Header>Todo List</Header>
       <InputRow>
         <TextInput
-          value={taskTitle}
+          value={newTaskTitle}
           onChange={onTextChange}
           onKeyDown={(event) => {
               if (event.keyCode === 13) {
@@ -105,13 +101,13 @@ function App() {
             return <TodoItem
               title={task.title}
               index={index}
-              key={index}
+              id={task.id}
+              key={task.id}
               onDelete={onDelete}
               onCheck={onCheck}
-              onTitleDoubleClick={onTitleDoubleClick}
               updateTitle={updateTitle}
               isChecked={task.isChecked}
-              isEditable={task.isEditable}/>
+              />
           }
         )
       }

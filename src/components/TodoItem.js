@@ -29,14 +29,16 @@ const MainContainer = styled.div`
     background-color: ${props => props.isChecked ? '#c8e6c9' : '#f9fbe7'};
 `;
 
-function TodoItem({ title, index, onDelete, isChecked, onCheck, onTitleDoubleClick, isEditable, updateTitle }) {
+function TodoItem({ title, id, index, onDelete, isChecked, onCheck, updateTitle }) {
+
+    const [isEditable, setEditable] = React.useState(false);
 
     const onDeleteClick = () => {
-        onDelete(index);
+        onDelete(id);
     };
 
     const onCheckboxChange = (event) => {
-        onCheck(index, event.target.checked)
+        onCheck(id, event.target.checked)
     };
 
     return (
@@ -48,20 +50,17 @@ function TodoItem({ title, index, onDelete, isChecked, onCheck, onTitleDoubleCli
                     contentEditable={isEditable}
                     isChecked={isChecked}
                     onDoubleClick={() => {
-                            onTitleDoubleClick(index, true);
-                        }
-                    }
+                        setEditable(true)
+                    }}
                     onBlur={(event) => {
-                            if (isEditable) {
-                                onTitleDoubleClick(index, false);
-                                updateTitle(index, event.target.innerText)
+                                setEditable(false)
+                                updateTitle(id, event.target.innerText)
                             }
                         }
-                    }
                     onKeyDown={(event) => {
                         if (isEditable && event.keyCode === 13) {
-                            onTitleDoubleClick(index, false);
-                            updateTitle(index, event.target.innerText)
+                            setEditable(false)
+                            updateTitle(id, event.target.innerText)
                         }
                     }}
                     suppressContentEditableWarning={true}
