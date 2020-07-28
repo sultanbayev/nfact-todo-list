@@ -33,24 +33,40 @@ function App() {
   const db = firebase.firestore();
   const collection = db.collection("tasks");
 
-  const onCollectionUpdate = (querySnapshot) => {
-    const data = [];
-    querySnapshot.forEach((doc) => {
+  collection.onSnapshot(querySnapshot => {
+    const tasks = [];
+    querySnapshot.forEach(doc => {
+      console.log("data: ", doc.data());
       const { title, isChecked } = doc.data();
-      data.push({
+      tasks.push({
         id: doc.id,
-        doc, // DocumentSnapshot
         title,
         isChecked,
       });
     });
-    setTasks(data);
-  };
-
-  collection.onSnapshot(onCollectionUpdate)
+    return tasks;
+  });
 
   const [newTaskTitle, setNewTaskTitle] = React.useState('');
   const [tasks, setTasks] = React.useState([]);
+
+  React.useEffect(() => { 
+    const unsubscribe = collection.onSnapshot(querySnapshot => {
+        const tasks = [];
+        querySnapshot.forEach(doc => {
+          console.log("data: ", doc.data());
+          const { title, isChecked } = doc.data();
+          tasks.push({
+            id: doc.id,
+            title,
+            isChecked,
+          });
+        });
+        setTasks(tasks)
+      });
+
+    return () => unsubscribe()
+  }, []);
 
   const addTask = () => {
     if (newTaskTitle.trim().length) {
